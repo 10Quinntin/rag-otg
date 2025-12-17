@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 import { flowiseService, ChatMessage } from '@/services/flowiseService';
 
 interface Message {
@@ -16,12 +16,19 @@ interface Message {
 }
 
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'initial',
+      role: 'assistant',
+      content: 'Hello Boss! How can I help you with motor rentals today?',
+      timestamp: new Date(),
+    },
+  ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -84,7 +91,7 @@ export default function ChatInterface() {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -92,20 +99,15 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-[600px] md:h-[700px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 dark:text-gray-400">
-            <Bot className="w-16 h-16 mb-4 text-primary-500" />
-            <h2 className="text-xl font-semibold mb-2">Welcome to AI Assistant</h2>
-            <p className="text-sm max-w-md">
-              Ask me anything! I'm powered by Flowise with RAG capabilities to provide
-              accurate and contextual responses.
-            </p>
-          </div>
-        )}
+    <div className="flex flex-col h-[600px] md:h-[700px] bg-[#2a2a2a] rounded-xl shadow-2xl overflow-hidden">
+      {/* Title Bar */}
+      <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-700">
+        <h2 className="text-white text-lg font-semibold">AI Assistant</h2>
+        <i className="fas fa-robot text-primary-500"></i>
+      </div>
 
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -114,22 +116,22 @@ export default function ChatInterface() {
             }`}
           >
             {message.role === 'assistant' && (
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center">
-                <Bot className="w-5 h-5 text-white" />
+              <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                <i className="fas fa-robot text-primary-500 text-lg"></i>
               </div>
             )}
 
             <div
-              className={`max-w-[80%] rounded-lg px-4 py-2 ${
+              className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                 message.role === 'user'
                   ? 'bg-primary-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                  : 'bg-[#3a3a3a] text-white'
               }`}
             >
               <p className="whitespace-pre-wrap break-words">{message.content}</p>
               
               {message.sources && message.sources.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-gray-300 dark:border-gray-600">
+                <div className="mt-2 pt-2 border-t border-gray-500">
                   <p className="text-xs font-semibold mb-1">Sources:</p>
                   <div className="space-y-1">
                     {message.sources.slice(0, 3).map((source, idx) => (
@@ -141,25 +143,19 @@ export default function ChatInterface() {
                 </div>
               )}
 
-              <p className="text-xs opacity-70 mt-1">
-                {message.timestamp.toLocaleTimeString()}
+              <p className="text-xs opacity-60 mt-2">
+                {message.id === 'initial' ? 'Just now' : message.timestamp.toLocaleTimeString()}
               </p>
             </div>
-
-            {message.role === 'user' && (
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                <User className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-              </div>
-            )}
           </div>
         ))}
 
         {isLoading && (
           <div className="flex gap-3 justify-start">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center">
-              <Bot className="w-5 h-5 text-white" />
+            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+              <i className="fas fa-robot text-primary-500 text-lg"></i>
             </div>
-            <div className="bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2">
+            <div className="bg-[#3a3a3a] rounded-2xl px-4 py-3">
               <Loader2 className="w-5 h-5 animate-spin text-primary-500" />
             </div>
           </div>
@@ -170,39 +166,45 @@ export default function ChatInterface() {
 
       {/* Error Message */}
       {error && (
-        <div className="px-4 py-2 bg-red-100 dark:bg-red-900/30 border-t border-red-300 dark:border-red-700">
-          <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+        <div className="px-6 py-3 bg-red-900/30 border-t border-red-700">
+          <p className="text-sm text-red-400">{error}</p>
         </div>
       )}
 
       {/* Input Area */}
-      <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-        <div className="flex gap-2">
-          <input
+      <div className="border-t border-gray-700 p-4">
+        <div className="flex gap-3 items-end">
+          <textarea
             ref={inputRef}
-            type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
+            onKeyDown={handleKeyPress}
+            placeholder="Ask about motor rentals, pricing, availability..."
             disabled={isLoading}
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white disabled:opacity-50"
+            rows={1}
+            className="flex-1 px-4 py-3 bg-[#3a3a3a] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 resize-none"
+            style={{ minHeight: '48px', maxHeight: '120px' }}
+            onInput={(e) => {
+              const target = e.target as HTMLTextAreaElement;
+              target.style.height = 'auto';
+              target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
+            }}
           />
           <button
             onClick={handleSend}
             disabled={isLoading || !input.trim()}
-            className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+            className="w-12 h-12 bg-primary-500 text-white rounded-full hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors flex-shrink-0"
           >
             {isLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
-              <>
-                <Send className="w-5 h-5" />
-                <span className="hidden sm:inline">Send</span>
-              </>
+              <Send className="w-5 h-5" />
             )}
           </button>
         </div>
+        <p className="text-xs text-gray-400 mt-2 text-center">
+          Press Enter to send • Shift+Enter for new line
+        </p>
       </div>
     </div>
   );
